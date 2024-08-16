@@ -10,6 +10,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+interface Question {
+  Question: string;
+  Answer: string;
+  Level: string;
+  Option_a: string;
+  Option_b: string;
+  Option_c: string;
+  Option_d: string;
+  Explanation: string;
+}
+
 async function getQuestions(type: string) {
   try {
     const res = await fetch(
@@ -24,7 +35,7 @@ async function getQuestions(type: string) {
   }
 }
 
-type userAnswer = {
+type UserAnswer = {
   questionIndex: number;
   question: string;
   userAnswer: string;
@@ -33,13 +44,13 @@ type userAnswer = {
 };
 
 export default function Quiz({ params }: { params: { type: string } }) {
-  const [data, setData] = useState([]);
-  const [numbers, setNumbers] = useState([]);
+  const [data, setData] = useState<Question[]>([]);
+  const [numbers, setNumbers] = useState<number[]>([]);
   const [timer, setTimer] = useState(60);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState("");
-  const [userAnswers, setUserAnswers] = useState<userAnswer[]>([]);
+  const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [quizFinished, setQuizFinished] = useState(false);
   const [isCorrectAnswer, setIsCorrectAnswer] = useState<boolean | null>(null);
   const [timerAdjustment, setTimerAdjustment] = useState<number | null>(null);
@@ -72,11 +83,9 @@ export default function Quiz({ params }: { params: { type: string } }) {
   }, []);
 
   // Reordered Questions
-  let reorderedQuestions: string[];
+  let reorderedQuestions: Question[] = [];
   if (data.length > 0) {
     reorderedQuestions = numbers.map((number) => data[number - 1]);
-  } else {
-    reorderedQuestions = [];
   }
 
   // Handle Next Question
@@ -89,7 +98,7 @@ export default function Quiz({ params }: { params: { type: string } }) {
       }
       setIsCorrectAnswer(null);
       setSelectedOption("");
-      setTimerAdjustment(null); // Reset timer adjustment message for the next question
+      setTimerAdjustment(null);
       return newIndex;
     });
   };
@@ -106,28 +115,16 @@ export default function Quiz({ params }: { params: { type: string } }) {
 
     const currentQuestion = reorderedQuestions[currentQuestionIndex];
     const correctAnswer = currentQuestion.Answer;
-    const level = currentQuestion.Level; // Get the difficulty level
+    const level = currentQuestion.Level;
 
     const isCorrect = selectedOption === correctAnswer;
     setIsCorrectAnswer(isCorrect);
 
     let adjustment = 0;
     if (isCorrect) {
-      if (level === "easy") {
-        adjustment = 4;
-      } else if (level === "medium") {
-        adjustment = 8;
-      } else if (level === "hard") {
-        adjustment = 12;
-      }
+      adjustment = level === "easy" ? 4 : level === "medium" ? 8 : 12;
     } else {
-      if (level === "easy") {
-        adjustment = -12;
-      } else if (level === "medium") {
-        adjustment = -8;
-      } else if (level === "hard") {
-        adjustment = -4;
-      }
+      adjustment = level === "easy" ? -12 : level === "medium" ? -8 : -4;
     }
 
     setTimerAdjustment(adjustment);
@@ -138,14 +135,14 @@ export default function Quiz({ params }: { params: { type: string } }) {
       ...prev,
       {
         questionIndex: currentQuestionIndex,
-        question: reorderedQuestions[currentQuestionIndex].Question,
+        question: currentQuestion.Question,
         userAnswer: `(${selectedOption}) ${
-          reorderedQuestions[currentQuestionIndex][`Option_${selectedOption}`]
+          currentQuestion[`Option_${selectedOption}` as keyof Question]
         }`,
         correctAnswer: `(${correctAnswer}) ${
-          reorderedQuestions[currentQuestionIndex][`Option_${correctAnswer}`]
+          currentQuestion[`Option_${correctAnswer}` as keyof Question]
         }`,
-        explanation: reorderedQuestions[currentQuestionIndex].Explanation,
+        explanation: currentQuestion.Explanation,
       },
     ]);
 
@@ -218,7 +215,7 @@ export default function Quiz({ params }: { params: { type: string } }) {
             } font-cofo-bold absolute`}
             style={{
               left: `${(timer / 60) * 100}%`,
-              transform: "translateX(-100%)",
+              transform: "translateX(-50%)",
               top: "120%",
             }}
           >
@@ -247,7 +244,7 @@ export default function Quiz({ params }: { params: { type: string } }) {
             }`}
             onClick={() => handleAnswer(v)}
           >
-            {question[`Option_${v}`]}
+            {question[`Option_${v}` as keyof Question]}
           </Button>
         ))}
       </div>

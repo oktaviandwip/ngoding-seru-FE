@@ -201,7 +201,7 @@ export default function Quiz({ params }: { params: { type: string } }) {
     );
   }
 
-  if (!question) return <p>Loading...</p>;
+  if (!question) return <p>Loading</p>;
 
   return (
     <div className="space-y-4">
